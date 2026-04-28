@@ -17,7 +17,7 @@ crimesRoutes.get('/', async (req, res) => {
     const limitNumber = Number(limit) || 10
 
     const where = {
-        ...(city ? { city: { contains: String(description) } } : {}),
+        ...(city ? { city: { contains: String(city) } } : {}),
         ...(type ? { type: { contains: String(type) } } : {}),
         ...(description ? { description: { contains: String(description) } } : {}),
         ...(date ? { date: Number(date) } : {}),
