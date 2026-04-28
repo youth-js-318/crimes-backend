@@ -1,0 +1,37 @@
+import { Router } from "express";
+import { prisma } from '../lib/prisma'
+import { buildPagination } from "../utils";
+
+const facebookEventCheckinRoutes = Router()
+
+facebookEventCheckinRoutes.get('/', async (req, res) => {
+    const {
+        page,
+        limit = 10,
+        person_id,
+        event_id,
+        event_name,
+        date,
+    } = req.query
+
+    const where = {
+        ...(person_id ? { person_id: Number(person_id) } : {}),
+        ...(event_id ? { event_id: Number(event_id) } : {}),
+        ...(event_name ? { event_name: { contains: String(event_name) } } : {}),
+        ...(date ? { date: Number(date) } : {}),
+    }
+
+    const pagination = buildPagination({ 
+        page: Number(page), 
+        limit: Number(limit)
+    })
+
+    const checkins = await prisma.facebook_event_checkin.findMany({
+        where,
+        ...pagination,
+    })
+
+    return res.json(checkins)
+})
+
+export default facebookEventCheckinRoutes
