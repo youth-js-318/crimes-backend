@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { prisma } from '../lib/prisma'
-import { buildPagination } from "../utils";
+import { buildOrderBy, buildPagination } from "../utils";
 
 const getFitNowMembersRoutes = Router()
 
@@ -13,6 +13,8 @@ getFitNowMembersRoutes.get('/', async (req, res) => {
         name,
         membership_start_date,
         membership_status,
+        sort_by,
+        sort_order,
     } = req.query
 
     const where = {
@@ -28,8 +30,15 @@ getFitNowMembersRoutes.get('/', async (req, res) => {
         limit: Number(limit)
     })
 
+    const orderBy = buildOrderBy({
+        sortBy: String(sort_by || ''),
+        sortOrder: String(sort_order || 'asc'),
+        allowedFields: ['id', 'person_id', 'name', 'membership_start_date', 'membership_status'],
+    })
+
     const members = await prisma.get_fit_now_member.findMany({
         where,
+        ...(orderBy ? { orderBy } : {}),
         ...pagination,
     })
 

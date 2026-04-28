@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { prisma } from '../lib/prisma'
-import { buildPagination } from "../utils";
+import { buildOrderBy, buildPagination } from "../utils";
 
 const facebookEventCheckinRoutes = Router()
 
@@ -12,6 +12,8 @@ facebookEventCheckinRoutes.get('/', async (req, res) => {
         event_id,
         event_name,
         date,
+        sort_by,
+        sort_order,
     } = req.query
 
     const where = {
@@ -26,8 +28,15 @@ facebookEventCheckinRoutes.get('/', async (req, res) => {
         limit: Number(limit)
     })
 
+    const orderBy = buildOrderBy({
+        sortBy: String(sort_by || ''),
+        sortOrder: String(sort_order || 'asc'),
+        allowedFields: ['person_id', 'event_id', 'event_name', 'date'],
+    })
+
     const checkins = await prisma.facebook_event_checkin.findMany({
         where,
+        ...(orderBy ? { orderBy } : {}),
         ...pagination,
     })
 

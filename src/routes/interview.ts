@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { prisma } from '../lib/prisma'
-import { buildPagination } from "../utils";
+import { buildOrderBy, buildPagination } from "../utils";
 
 const interviewRoutes = Router()
 
@@ -10,6 +10,8 @@ interviewRoutes.get('/', async (req, res) => {
         limit = 10,
         person_id,
         transcript,
+        sort_by,
+        sort_order,
     } = req.query
 
     const where = {
@@ -22,8 +24,15 @@ interviewRoutes.get('/', async (req, res) => {
         limit: Number(limit)
     })
 
+    const orderBy = buildOrderBy({
+        sortBy: String(sort_by || ''),
+        sortOrder: String(sort_order || 'asc'),
+        allowedFields: ['person_id', 'transcript'],
+    })
+
     const interviews = await prisma.interview.findMany({
         where,
+        ...(orderBy ? { orderBy } : {}),
         ...pagination,
     })
 

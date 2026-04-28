@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { prisma } from '../lib/prisma'
-import { buildPagination } from "../utils";
+import { buildOrderBy, buildPagination } from "../utils";
 
 const pessoasRoutes = Router()
 
@@ -13,6 +13,8 @@ pessoasRoutes.get('/', async (req, res) => {
         address_number,
         address_street_name,
         ssn,
+        sort_by,
+        sort_order,
     } = req.query
 
     const where = {
@@ -25,11 +27,18 @@ pessoasRoutes.get('/', async (req, res) => {
 
     const pagination = buildPagination({ 
         page: Number(page), 
-        limit: Number(page)
+        limit: Number(limit)
+    })
+
+    const orderBy = buildOrderBy({
+        sortBy: String(sort_by || ''),
+        sortOrder: String(sort_order || 'asc'),
+        allowedFields: ['id', 'name', 'license_id', 'address_number', 'address_street_name', 'ssn'],
     })
 
     const crimes = await prisma.person.findMany({
         where,
+        ...(orderBy ? { orderBy } : {}),
         ...pagination,
     })
 
