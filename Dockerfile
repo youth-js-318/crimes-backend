@@ -2,7 +2,7 @@ FROM node:22-bookworm-slim
 
 WORKDIR /app
 
-ARG DATABASE_URL=file:/app/prisma/dev.db
+ARG DATABASE_URL=file:./dev.db
 ENV DATABASE_URL=${DATABASE_URL}
 
 RUN apt-get update \
