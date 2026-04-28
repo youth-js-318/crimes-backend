@@ -1,5 +1,6 @@
 import express, { json } from 'express'
 import cors from 'cors'
+import swaggerUi from 'swagger-ui-express'
 import crimesRoutes from './src/routes/crimes'
 import carteirasRoutes from './src/routes/carteiras'
 import pessoasRoutes from './src/routes/pessoas'
@@ -8,12 +9,24 @@ import incomeRoutes from './src/routes/income'
 import getFitNowMembersRoutes from './src/routes/get_fit_now_members'
 import getFitNowCheckinRoutes from './src/routes/get_fit_now_checkin'
 import facebookEventCheckinRoutes from './src/routes/facebook_event_checkin'
+import { openApiSpec } from './src/docs/openapi'
 
 const app = express()
 
 app.use(json())
 app.use(cors())
 
+app.get('/docs.json', (_req, res) => {
+    return res.json(openApiSpec)
+})
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec))
+
+// Um crime aconteceu e o detetive precisa de sua ajuda. O detetive lhe deu o relatório da cena do crime, mas você perdeu ele. Você lembra vagamente que o crime foi um assassinato (murder) que aconteceu em algum momento em 15 de janeiro de 2018 e que ele aconteceu em SQL City. Comece encontrando o relatório correspondente da database da polícia.
+
+// Todos aceitam os parâmetros: page, limit, sort_by e sort_order
+// Também aceitam os parâmetros de filtro específicos de cada rota, 
+// como person_id para entrevistas ou ssn para renda
 app.use('/crimes', crimesRoutes)
 app.use('/carteiras', carteirasRoutes)
 app.use('/pessoas', pessoasRoutes)
