@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model crime_scene_report {
+  date        Int
+  type        String
+  description String
+  city        String
+
+  @@id([date, type, description, city])
+}
+
+model drivers_license {
+  id          Int     @id @default(autoincrement())
+  age          Int?
+  height       Int?
+  eye_color    String?
+  hair_color   String?
+  gender       String?
+  plate_number String
+  car_make     String?
+  car_model    String?
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model facebook_event_checkin {
+  person_id  Int
+  event_id   Int
+  event_name String?
+  date       Int
+  person     person? @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([person_id, event_id, date])
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model get_fit_now_check_in {
+  membership_id      String
+  check_in_date      Int
+  check_in_time      Int
+  check_out_time     Int
+  get_fit_now_member get_fit_now_member? @relation(fields: [membership_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([membership_id, check_in_date, check_in_time])
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model get_fit_now_member {
+  id                    String                 @id
+  person_id             Int?
+  name                  String?
+  membership_start_date Int?
+  membership_status     String?
+  get_fit_now_check_in  get_fit_now_check_in[]
+  person                person?                @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model income {
+  ssn           String   @id
+  annual_income Int?
+  person        person[]
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model interview {
+  person_id  Int
+  transcript String
+  person     person? @relation(fields: [person_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([person_id, transcript])
+}
+
+model person {
+  id                     Int                      @id @default(autoincrement())
+  name                   String?
+  license_id             Int?                     @unique
+  address_number         Int?
+  address_street_name    String?
+  ssn                    String?
+  facebook_event_checkin facebook_event_checkin[]
+  get_fit_now_member     get_fit_now_member[]
+  interview              interview[]
+  income                 income?                  @relation(fields: [ssn], references: [ssn], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model solution {
+  id    Int     @id @default(autoincrement())
+  user  Int?
+  value String?
+}
