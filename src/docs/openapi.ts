@@ -7,6 +7,9 @@ export const openApiSpec = {
     },
     servers: [
         {
+            url: 'https://crimes-backend-production.up.railway.app',
+        },
+        {
             url: 'http://localhost:3000',
         },
     ],
