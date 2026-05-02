@@ -8,9 +8,11 @@ carteirasRoutes.get('/', async (req, res) => {
     const {
         page,
         limit = 10,
+        id,
         age,
         height,
         eye_color,
+        hair_color,
         gender,
         plate_number,
         car_make,
@@ -20,9 +22,11 @@ carteirasRoutes.get('/', async (req, res) => {
     } = req.query
 
     const where = {
+        ...(id ? { id: Number(id) } : {}),
         ...(age ? { age: Number(age) } : {}),
         ...(height ? { height: Number(height) } : {}),
         ...(eye_color ? { eye_color: { contains: String(eye_color) } } : {}),
+        ...(hair_color ? { hair_color: { contains: String(hair_color) } } : {}),
         ...(gender ? { gender: { contains: String(gender) } } : {}),
         ...(plate_number ? { plate_number: { contains: String(plate_number) } } : {}),
         ...(car_make ? { car_make: { contains: String(car_make) } } : {}),
