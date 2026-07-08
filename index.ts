@@ -10,6 +10,11 @@ import getFitNowMembersRoutes from './src/routes/get_fit_now_members'
 import getFitNowCheckinRoutes from './src/routes/get_fit_now_checkin'
 import facebookEventCheckinRoutes from './src/routes/facebook_event_checkin'
 import { openApiSpec } from './src/docs/openapi'
+import dotenv from 'dotenv'
+
+dotenv.config()
+
+const PORT = process.env.PORT || 3000
 
 const app = express()
 
@@ -22,11 +27,16 @@ app.get('/docs.json', (_req, res) => {
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec))
 
-// Um crime aconteceu e o detetive precisa de sua ajuda. O detetive lhe deu o relatório da cena do crime, mas você perdeu ele. Você lembra vagamente que o crime foi um assassinato (murder) que aconteceu em algum momento em 15 de janeiro de 2018 e que ele aconteceu em SQL City. Comece encontrando o relatório correspondente da database da polícia.
+// Um crime aconteceu e o detetive precisa de sua ajuda. O detetive lhe deu o
+// relatório da cena do crime, mas você perdeu ele. Você lembra vagamente que
+// o crime foi um assassinato (murder) que aconteceu em algum momento
+// em 15 de janeiro de 2018 e que ele aconteceu em SQL City.
+// Comece encontrando o relatório correspondente da database da polícia.
 
 // Todos aceitam os parâmetros: page, limit, sort_by e sort_order
-// Também aceitam os parâmetros de filtro específicos de cada rota, 
+// Também aceitam os parâmetros de filtro específicos de cada rota,
 // como person_id para entrevistas ou ssn para renda
+
 app.use('/crimes', crimesRoutes)
 app.use('/carteiras', carteirasRoutes)
 app.use('/pessoas', pessoasRoutes)
@@ -36,6 +46,6 @@ app.use('/academia-membros', getFitNowMembersRoutes)
 app.use('/academia-checkin', getFitNowCheckinRoutes)
 app.use('/facebook-checkin', facebookEventCheckinRoutes)
 
-app.listen(3000, () => {
-    console.log('server running on http://localhost:3000')
+app.listen(PORT, () => {
+    console.log(`server running on http://localhost:${PORT}`)
 })
