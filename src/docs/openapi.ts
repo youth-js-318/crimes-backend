@@ -186,6 +186,11 @@ export const openApiSpec = {
                     correct: { type: 'boolean', description: 'Indica se a solucao submetida esta correta' },
                     message: { type: 'string', description: 'Mensagem amigavel descrevendo o resultado' },
                     hint: { type: 'string', description: 'Dica para o jogador (presente apenas em respostas incorretas)' },
+                    role: {
+                        type: 'string',
+                        enum: ['assassino', 'mandante'],
+                        description: 'Papel da pessoa correta (presente apenas em respostas corretas)',
+                    },
                 },
             },
         },

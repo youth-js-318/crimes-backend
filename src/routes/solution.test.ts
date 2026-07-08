@@ -46,9 +46,10 @@ describe('validateSolution', () => {
         assert.match(result.message, /campo "name"/i)
     })
 
-    it('returns a congratulatory message with the correct name from the database', async () => {
+    it('returns a congratulatory message with the assassin name from the database', async () => {
         const result = await validateSolution('Jeremy Bowers')
         assert.equal(result.correct, true)
+        assert.equal(result.role, 'assassino')
         assert.equal(result.hint, undefined)
         assert.match(result.message, /Parabens/i)
         assert.match(result.message, /Jeremy Bowers/)
@@ -57,12 +58,30 @@ describe('validateSolution', () => {
     it('accepts the correct name regardless of case and surrounding whitespace', async () => {
         const result = await validateSolution('  jeremy bowers  ')
         assert.equal(result.correct, true)
+        assert.equal(result.role, 'assassino')
         assert.match(result.message, /Jeremy Bowers/)
+    })
+
+    it('returns a congratulatory message with the mastermind name from the database', async () => {
+        const result = await validateSolution('Miranda Priestly')
+        assert.equal(result.correct, true)
+        assert.equal(result.role, 'mandante')
+        assert.equal(result.hint, undefined)
+        assert.match(result.message, /Parabens/i)
+        assert.match(result.message, /Miranda Priestly/)
+    })
+
+    it('accepts the mastermind name regardless of case and surrounding whitespace', async () => {
+        const result = await validateSolution('  miranda priestly  ')
+        assert.equal(result.correct, true)
+        assert.equal(result.role, 'mandante')
+        assert.match(result.message, /Miranda Priestly/)
     })
 
     it('returns a friendly message with a hint for an incorrect name', async () => {
         const result = await validateSolution('John Doe')
         assert.equal(result.correct, false)
+        assert.equal(result.role, undefined)
         assert.ok(result.hint, 'expected a hint on wrong answer')
         assert.match(result.message, /Quase la|incorret|nome submetido/i)
         assert.match(result.hint, /Dica/i)
@@ -72,6 +91,8 @@ describe('validateSolution', () => {
         const result = await validateSolution('John Doe')
         assert.ok(result.hint)
         assert.doesNotMatch(result.hint, /Jeremy Bowers/)
+        assert.doesNotMatch(result.hint, /Miranda Priestly/)
         assert.doesNotMatch(result.message, /Jeremy Bowers/)
+        assert.doesNotMatch(result.message, /Miranda Priestly/)
     })
 })
