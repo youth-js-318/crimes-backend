@@ -26,7 +26,13 @@ app.get('/docs.json', (_req, res) => {
     return res.json(openApiSpec)
 })
 
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec))
+app.use(
+    '/docs',
+    swaggerUi.serve,
+    swaggerUi.setup(undefined, {
+        swaggerOptions: { url: '/docs.json' },
+    }),
+)
 
 // Um crime aconteceu e o detetive precisa de sua ajuda. O detetive lhe deu o
 // relatório da cena do crime, mas você perdeu ele. Você lembra vagamente que
