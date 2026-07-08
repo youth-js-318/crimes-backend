@@ -7,6 +7,15 @@ const ok = (description: string, schemaRef: string) => ({
     },
 })
 
+const okObject = (description: string, schemaRef: string) => ({
+    description,
+    content: {
+        'application/json': {
+            schema: { $ref: schemaRef },
+        },
+    },
+})
+
 const error = (description: string) => ({
     description,
     content: {
@@ -39,6 +48,7 @@ export const openApiSpec = {
         { name: 'Renda' },
         { name: 'Academia' },
         { name: 'Facebook' },
+        { name: 'Solucao' },
     ],
     components: {
         parameters: {
@@ -166,6 +176,16 @@ export const openApiSpec = {
                     event_id: { type: 'integer', description: 'Id do evento' },
                     event_name: { type: 'string', nullable: true, description: 'Nome do evento' },
                     date: { type: 'integer', description: 'Data do check-in' },
+                },
+            },
+            Validation: {
+                type: 'object',
+                description: 'Resultado da validacao de uma solucao submetida',
+                required: ['correct', 'message'],
+                properties: {
+                    correct: { type: 'boolean', description: 'Indica se a solucao submetida esta correta' },
+                    message: { type: 'string', description: 'Mensagem amigavel descrevendo o resultado' },
+                    hint: { type: 'string', description: 'Dica para o jogador (presente apenas em respostas incorretas)' },
                 },
             },
         },
@@ -338,6 +358,31 @@ export const openApiSpec = {
                 responses: {
                     '200': ok('Lista de check-ins do Facebook', '#/components/schemas/FacebookEventCheckin'),
                     '400': error('Parametros de consulta invalidos'),
+                    '500': error('Erro interno do servidor'),
+                },
+            },
+        },
+        '/solucao': {
+            post: {
+                tags: ['Solucao'],
+                summary: 'Valida uma solucao para o crime',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: {
+                                type: 'object',
+                                required: ['name'],
+                                properties: {
+                                    name: { type: 'string', description: 'Nome do suspeito submetido como resposta' },
+                                },
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    '200': okObject('Resultado da validacao', '#/components/schemas/Validation'),
+                    '400': error('Body invalido'),
                     '500': error('Erro interno do servidor'),
                 },
             },

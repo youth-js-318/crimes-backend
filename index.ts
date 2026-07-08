@@ -9,6 +9,7 @@ import incomeRoutes from './src/routes/income'
 import getFitNowMembersRoutes from './src/routes/get_fit_now_members'
 import getFitNowCheckinRoutes from './src/routes/get_fit_now_checkin'
 import facebookEventCheckinRoutes from './src/routes/facebook_event_checkin'
+import solutionRoutes from './src/routes/solution'
 import { openApiSpec } from './src/docs/openapi'
 import dotenv from 'dotenv'
 
@@ -45,6 +46,7 @@ app.use('/saldo', incomeRoutes)
 app.use('/academia-membros', getFitNowMembersRoutes)
 app.use('/academia-checkin', getFitNowCheckinRoutes)
 app.use('/facebook-checkin', facebookEventCheckinRoutes)
+app.use('/solucao', solutionRoutes)
 
 app.listen(PORT, () => {
     console.log(`server running on http://localhost:${PORT}`)
