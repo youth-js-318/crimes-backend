@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { prisma } from '../lib/prisma'
 import { buildOrderBy, buildPagination } from "../utils";
+import { buildResponse } from "../utils/response";
 
 const pessoasRoutes = Router()
 
 pessoasRoutes.get('/', async (req, res) => {
     const {
         page,
-        limit = 10,
+        limit,
         name,
         license_id,
         address_number,
@@ -25,8 +26,8 @@ pessoasRoutes.get('/', async (req, res) => {
         ...(ssn ? { ssn: { contains: String(ssn) } } : {}),
     }
 
-    const pagination = buildPagination({ 
-        page: Number(page), 
+    const pagination = buildPagination({
+        page: Number(page),
         limit: Number(limit)
     })
 
@@ -36,13 +37,16 @@ pessoasRoutes.get('/', async (req, res) => {
         allowedFields: ['id', 'name', 'license_id', 'address_number', 'address_street_name', 'ssn'],
     })
 
-    const crimes = await prisma.person.findMany({
-        where,
-        ...(orderBy ? { orderBy } : {}),
-        ...pagination,
-    })
+    const [data, total] = await Promise.all([
+        prisma.person.findMany({
+            where,
+            ...(orderBy ? { orderBy } : {}),
+            ...pagination,
+        }),
+        prisma.person.count({ where }),
+    ])
 
-    return res.json(crimes)
+    return res.json(buildResponse({ data, page, limit, total }))
 })
 
 export default pessoasRoutes

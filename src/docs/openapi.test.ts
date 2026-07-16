@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { openApiSpec } from './openapi'
 
 const REQUIRED_SCHEMAS = [
+    'Pagination',
     'CrimeSceneReport',
     'DriversLicense',
     'Person',
@@ -26,7 +27,10 @@ type PathKey =
     | '/facebook-checkin'
     | '/solucao'
 
-const ARRAY_ENDPOINTS: Record<PathKey, string> = {
+type ArrayPathKey = Exclude<PathKey, '/solucao'>
+type ObjectPathKey = '/solucao'
+
+const ARRAY_ENDPOINTS: Record<ArrayPathKey, string> = {
     '/crimes': 'CrimeSceneReport',
     '/carteiras': 'DriversLicense',
     '/pessoas': 'Person',
@@ -37,7 +41,7 @@ const ARRAY_ENDPOINTS: Record<PathKey, string> = {
     '/facebook-checkin': 'FacebookEventCheckin',
 }
 
-const OBJECT_ENDPOINTS: Record<PathKey, string> = {
+const OBJECT_ENDPOINTS: Record<ObjectPathKey, string> = {
     '/solucao': 'Validation',
 }
 
@@ -82,7 +86,7 @@ describe('openapi spec', () => {
         }
     })
 
-    it('declares a 200 array response with the correct schema for array endpoints', () => {
+    it('declares a 200 paginated envelope with the correct schema for array endpoints', () => {
         for (const [path, expectedSchema] of Object.entries(ARRAY_ENDPOINTS) as [PathKey, string][]) {
             const operation = spec.paths[path]?.get
             assert.ok(operation, `Operacao GET ausente em ${path}`)
@@ -91,15 +95,35 @@ describe('openapi spec', () => {
             assert.ok(response200, `Resposta 200 ausente em ${path}`)
 
             const jsonSchema = response200.content?.['application/json']?.schema as
-                | { type?: string; items?: { $ref?: string } }
+                | {
+                    type?: string
+                    required?: string[]
+                    properties?: Record<string, unknown>
+                }
                 | undefined
             assert.ok(jsonSchema, `Schema JSON ausente em ${path} 200`)
-            assert.equal(jsonSchema.type, 'array', `${path} deve retornar array`)
-            assert.equal(
-                jsonSchema.items?.$ref,
-                `#/components/schemas/${expectedSchema}`,
-                `${path} deve referenciar ${expectedSchema}`,
+            assert.equal(jsonSchema.type, 'object', `${path} deve retornar object (envelope)`)
+            assert.ok(
+                jsonSchema.required?.includes('data') &&
+                    jsonSchema.required?.includes('pagination') &&
+                    jsonSchema.required?.includes('status'),
+                `${path} deve exigir data, pagination e status`,
             )
+
+            const data = jsonSchema.properties?.data as { type?: string; items?: { $ref?: string } } | undefined
+            assert.ok(data, `${path} deve declarar propriedade data`)
+            assert.equal(data.type, 'array', `${path} data deve ser array`)
+            assert.equal(
+                data.items?.$ref,
+                `#/components/schemas/${expectedSchema}`,
+                `${path} data.items deve referenciar ${expectedSchema}`,
+            )
+
+            const pagination = jsonSchema.properties?.pagination as { $ref?: string } | undefined
+            assert.equal(pagination?.$ref, '#/components/schemas/Pagination', `${path} pagination deve referenciar Pagination`)
+
+            const status = jsonSchema.properties?.status as { enum?: string[] } | undefined
+            assert.deepEqual(status?.enum, ['success'], `${path} status deve ser enum ['success']`)
         }
     })
 
@@ -163,7 +187,10 @@ describe('openapi spec', () => {
         assert.ok(matches.length > 0, 'Nenhum $ref encontrado no spec')
 
         const components = spec.components ?? {}
-        for (const [, section, name] of matches) {
+        for (const match of matches) {
+            const section = match[1]
+            const name = match[2]
+            if (!section || !name) continue
             const sectionContainer = (components as Record<string, Record<string, unknown> | undefined>)[section]
             assert.ok(
                 sectionContainer?.[name],

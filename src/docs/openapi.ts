@@ -7,6 +7,23 @@ const ok = (description: string, schemaRef: string) => ({
     },
 })
 
+const okPaginated = (description: string, schemaRef: string) => ({
+    description,
+    content: {
+        'application/json': {
+            schema: {
+                type: 'object',
+                required: ['data', 'pagination', 'status'],
+                properties: {
+                    data: { type: 'array', items: { $ref: schemaRef } },
+                    pagination: { $ref: '#/components/schemas/Pagination' },
+                    status: { type: 'string', enum: ['success'] },
+                },
+            },
+        },
+    },
+})
+
 const okObject = (description: string, schemaRef: string) => ({
     description,
     content: {
@@ -78,6 +95,19 @@ export const openApiSpec = {
             },
         },
         schemas: {
+            Pagination: {
+                type: 'object',
+                description: 'Metadados de paginacao da resposta',
+                required: ['page', 'limit', 'total', 'total_pages', 'has_next', 'has_prev'],
+                properties: {
+                    page: { type: 'integer', nullable: true, description: 'Pagina atual (null se nao paginado)' },
+                    limit: { type: 'integer', nullable: true, description: 'Itens por pagina (null se nao paginado)' },
+                    total: { type: 'integer', description: 'Total de registros que correspondem ao filtro' },
+                    total_pages: { type: 'integer', nullable: true, description: 'Total de paginas (null se nao paginado)' },
+                    has_next: { type: 'boolean', nullable: true, description: 'Existe proxima pagina?' },
+                    has_prev: { type: 'boolean', nullable: true, description: 'Existe pagina anterior?' },
+                },
+            },
             Error: {
                 type: 'object',
                 description: 'Resposta de erro padrao',
@@ -211,7 +241,7 @@ export const openApiSpec = {
                     { name: 'date', in: 'query', schema: { type: 'integer' } },
                 ],
                 responses: {
-                    '200': ok('Lista de crimes', '#/components/schemas/CrimeSceneReport'),
+                    '200': okPaginated('Lista de crimes', '#/components/schemas/CrimeSceneReport'),
                     '400': error('Parametros de consulta invalidos'),
                     '500': error('Erro interno do servidor'),
                 },
@@ -237,7 +267,7 @@ export const openApiSpec = {
                     { name: 'car_model', in: 'query', schema: { type: 'string' } },
                 ],
                 responses: {
-                    '200': ok('Lista de carteiras', '#/components/schemas/DriversLicense'),
+                    '200': okPaginated('Lista de carteiras', '#/components/schemas/DriversLicense'),
                     '400': error('Parametros de consulta invalidos'),
                     '500': error('Erro interno do servidor'),
                 },
@@ -259,7 +289,7 @@ export const openApiSpec = {
                     { name: 'ssn', in: 'query', schema: { type: 'string' } },
                 ],
                 responses: {
-                    '200': ok('Lista de pessoas', '#/components/schemas/Person'),
+                    '200': okPaginated('Lista de pessoas', '#/components/schemas/Person'),
                     '400': error('Parametros de consulta invalidos'),
                     '500': error('Erro interno do servidor'),
                 },
@@ -278,7 +308,7 @@ export const openApiSpec = {
                     { name: 'transcript', in: 'query', schema: { type: 'string' } },
                 ],
                 responses: {
-                    '200': ok('Lista de entrevistas', '#/components/schemas/Interview'),
+                    '200': okPaginated('Lista de entrevistas', '#/components/schemas/Interview'),
                     '400': error('Parametros de consulta invalidos'),
                     '500': error('Erro interno do servidor'),
                 },
@@ -297,7 +327,7 @@ export const openApiSpec = {
                     { name: 'annual_income', in: 'query', schema: { type: 'integer' } },
                 ],
                 responses: {
-                    '200': ok('Lista de renda', '#/components/schemas/Income'),
+                    '200': okPaginated('Lista de renda', '#/components/schemas/Income'),
                     '400': error('Parametros de consulta invalidos'),
                     '500': error('Erro interno do servidor'),
                 },
@@ -319,7 +349,7 @@ export const openApiSpec = {
                     { name: 'membership_status', in: 'query', schema: { type: 'string' } },
                 ],
                 responses: {
-                    '200': ok('Lista de membros', '#/components/schemas/GetFitNowMember'),
+                    '200': okPaginated('Lista de membros', '#/components/schemas/GetFitNowMember'),
                     '400': error('Parametros de consulta invalidos'),
                     '500': error('Erro interno do servidor'),
                 },
@@ -340,7 +370,7 @@ export const openApiSpec = {
                     { name: 'check_out_time', in: 'query', schema: { type: 'integer' } },
                 ],
                 responses: {
-                    '200': ok('Lista de check-ins', '#/components/schemas/GetFitNowCheckIn'),
+                    '200': okPaginated('Lista de check-ins', '#/components/schemas/GetFitNowCheckIn'),
                     '400': error('Parametros de consulta invalidos'),
                     '500': error('Erro interno do servidor'),
                 },
@@ -361,7 +391,7 @@ export const openApiSpec = {
                     { name: 'date', in: 'query', schema: { type: 'integer' } },
                 ],
                 responses: {
-                    '200': ok('Lista de check-ins do Facebook', '#/components/schemas/FacebookEventCheckin'),
+                    '200': okPaginated('Lista de check-ins do Facebook', '#/components/schemas/FacebookEventCheckin'),
                     '400': error('Parametros de consulta invalidos'),
                     '500': error('Erro interno do servidor'),
                 },

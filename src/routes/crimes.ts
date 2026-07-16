@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { prisma } from '../lib/prisma'
 import { buildOrderBy, buildPagination } from "../utils";
+import { buildResponse } from "../utils/response";
 
 const crimesRoutes = Router()
 
 crimesRoutes.get('/', async (req, res) => {
     const {
         page,
-        limit = 10,
+        limit,
         city,
         type,
         description,
@@ -23,8 +24,8 @@ crimesRoutes.get('/', async (req, res) => {
         ...(date ? { date: Number(date) } : {}),
     }
 
-    const pagination = buildPagination({ 
-        page: Number(page), 
+    const pagination = buildPagination({
+        page: Number(page),
         limit: Number(limit)
     })
 
@@ -34,13 +35,16 @@ crimesRoutes.get('/', async (req, res) => {
         allowedFields: ['date', 'type', 'description', 'city'],
     })
 
-    const crimes = await prisma.crime_scene_report.findMany({
-        where,
-        ...(orderBy ? { orderBy } : {}),
-        ...pagination,
-    })
+    const [data, total] = await Promise.all([
+        prisma.crime_scene_report.findMany({
+            where,
+            ...(orderBy ? { orderBy } : {}),
+            ...pagination,
+        }),
+        prisma.crime_scene_report.count({ where }),
+    ])
 
-    return res.json(crimes)
+    return res.json(buildResponse({ data, page, limit, total }))
 })
 
 export default crimesRoutes

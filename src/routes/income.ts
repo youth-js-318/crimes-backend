@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { prisma } from '../lib/prisma'
 import { buildOrderBy, buildPagination } from "../utils";
+import { buildResponse } from "../utils/response";
 
 const incomeRoutes = Router()
 
 incomeRoutes.get('/', async (req, res) => {
     const {
         page,
-        limit = 10,
+        limit,
         ssn,
         annual_income,
         sort_by,
@@ -19,8 +20,8 @@ incomeRoutes.get('/', async (req, res) => {
         ...(annual_income ? { annual_income: Number(annual_income) } : {}),
     }
 
-    const pagination = buildPagination({ 
-        page: Number(page), 
+    const pagination = buildPagination({
+        page: Number(page),
         limit: Number(limit)
     })
 
@@ -30,13 +31,16 @@ incomeRoutes.get('/', async (req, res) => {
         allowedFields: ['ssn', 'annual_income'],
     })
 
-    const incomes = await prisma.income.findMany({
-        where,
-        ...(orderBy ? { orderBy } : {}),
-        ...pagination,
-    })
+    const [data, total] = await Promise.all([
+        prisma.income.findMany({
+            where,
+            ...(orderBy ? { orderBy } : {}),
+            ...pagination,
+        }),
+        prisma.income.count({ where }),
+    ])
 
-    return res.json(incomes)
+    return res.json(buildResponse({ data, page, limit, total }))
 })
 
 export default incomeRoutes

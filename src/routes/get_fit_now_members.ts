@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { prisma } from '../lib/prisma'
 import { buildOrderBy, buildPagination } from "../utils";
+import { buildResponse } from "../utils/response";
 
 const getFitNowMembersRoutes = Router()
 
 getFitNowMembersRoutes.get('/', async (req, res) => {
     const {
         page,
-        limit = 10,
+        limit,
         id,
         person_id,
         name,
@@ -25,8 +26,8 @@ getFitNowMembersRoutes.get('/', async (req, res) => {
         ...(membership_status ? { membership_status: { contains: String(membership_status) } } : {}),
     }
 
-    const pagination = buildPagination({ 
-        page: Number(page), 
+    const pagination = buildPagination({
+        page: Number(page),
         limit: Number(limit)
     })
 
@@ -36,13 +37,16 @@ getFitNowMembersRoutes.get('/', async (req, res) => {
         allowedFields: ['id', 'person_id', 'name', 'membership_start_date', 'membership_status'],
     })
 
-    const members = await prisma.get_fit_now_member.findMany({
-        where,
-        ...(orderBy ? { orderBy } : {}),
-        ...pagination,
-    })
+    const [data, total] = await Promise.all([
+        prisma.get_fit_now_member.findMany({
+            where,
+            ...(orderBy ? { orderBy } : {}),
+            ...pagination,
+        }),
+        prisma.get_fit_now_member.count({ where }),
+    ])
 
-    return res.json(members)
+    return res.json(buildResponse({ data, page, limit, total }))
 })
 
 export default getFitNowMembersRoutes

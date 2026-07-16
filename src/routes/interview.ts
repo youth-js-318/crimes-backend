@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { prisma } from '../lib/prisma'
 import { buildOrderBy, buildPagination } from "../utils";
+import { buildResponse } from "../utils/response";
 
 const interviewRoutes = Router()
 
 interviewRoutes.get('/', async (req, res) => {
     const {
         page,
-        limit = 10,
+        limit,
         person_id,
         transcript,
         sort_by,
@@ -19,8 +20,8 @@ interviewRoutes.get('/', async (req, res) => {
         ...(transcript ? { transcript: { contains: String(transcript) } } : {}),
     }
 
-    const pagination = buildPagination({ 
-        page: Number(page), 
+    const pagination = buildPagination({
+        page: Number(page),
         limit: Number(limit)
     })
 
@@ -30,13 +31,16 @@ interviewRoutes.get('/', async (req, res) => {
         allowedFields: ['person_id', 'transcript'],
     })
 
-    const interviews = await prisma.interview.findMany({
-        where,
-        ...(orderBy ? { orderBy } : {}),
-        ...pagination,
-    })
+    const [data, total] = await Promise.all([
+        prisma.interview.findMany({
+            where,
+            ...(orderBy ? { orderBy } : {}),
+            ...pagination,
+        }),
+        prisma.interview.count({ where }),
+    ])
 
-    return res.json(interviews)
+    return res.json(buildResponse({ data, page, limit, total }))
 })
 
 export default interviewRoutes

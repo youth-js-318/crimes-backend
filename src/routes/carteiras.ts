@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { prisma } from '../lib/prisma'
 import { buildOrderBy, buildPagination } from "../utils";
+import { buildResponse } from "../utils/response";
 
 const carteirasRoutes = Router()
 
 carteirasRoutes.get('/', async (req, res) => {
     const {
         page,
-        limit = 10,
+        limit,
         id,
         age,
         height,
@@ -33,8 +34,8 @@ carteirasRoutes.get('/', async (req, res) => {
         ...(car_model ? { car_model: { contains: String(car_model) } } : {}),
     }
 
-    const pagination = buildPagination({ 
-        page: Number(page), 
+    const pagination = buildPagination({
+        page: Number(page),
         limit: Number(limit)
     })
 
@@ -44,13 +45,16 @@ carteirasRoutes.get('/', async (req, res) => {
         allowedFields: ['id', 'age', 'height', 'eye_color', 'hair_color', 'gender', 'plate_number', 'car_make', 'car_model'],
     })
 
-    const crimes = await prisma.drivers_license.findMany({
-        where,
-        ...(orderBy ? { orderBy } : {}),
-        ...pagination,
-    })
+    const [data, total] = await Promise.all([
+        prisma.drivers_license.findMany({
+            where,
+            ...(orderBy ? { orderBy } : {}),
+            ...pagination,
+        }),
+        prisma.drivers_license.count({ where }),
+    ])
 
-    return res.json(crimes)
+    return res.json(buildResponse({ data, page, limit, total }))
 })
 
 export default carteirasRoutes

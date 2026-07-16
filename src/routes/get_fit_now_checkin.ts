@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { prisma } from '../lib/prisma'
 import { buildOrderBy, buildPagination } from "../utils";
+import { buildResponse } from "../utils/response";
 
 const getFitNowCheckinRoutes = Router()
 
 getFitNowCheckinRoutes.get('/', async (req, res) => {
     const {
         page,
-        limit = 10,
+        limit,
         membership_id,
         check_in_date,
         check_in_time,
@@ -23,8 +24,8 @@ getFitNowCheckinRoutes.get('/', async (req, res) => {
         ...(check_out_time ? { check_out_time: Number(check_out_time) } : {}),
     }
 
-    const pagination = buildPagination({ 
-        page: Number(page), 
+    const pagination = buildPagination({
+        page: Number(page),
         limit: Number(limit)
     })
 
@@ -34,13 +35,16 @@ getFitNowCheckinRoutes.get('/', async (req, res) => {
         allowedFields: ['membership_id', 'check_in_date', 'check_in_time', 'check_out_time'],
     })
 
-    const checkins = await prisma.get_fit_now_check_in.findMany({
-        where,
-        ...(orderBy ? { orderBy } : {}),
-        ...pagination,
-    })
+    const [data, total] = await Promise.all([
+        prisma.get_fit_now_check_in.findMany({
+            where,
+            ...(orderBy ? { orderBy } : {}),
+            ...pagination,
+        }),
+        prisma.get_fit_now_check_in.count({ where }),
+    ])
 
-    return res.json(checkins)
+    return res.json(buildResponse({ data, page, limit, total }))
 })
 
 export default getFitNowCheckinRoutes
