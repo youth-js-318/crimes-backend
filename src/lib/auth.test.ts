@@ -107,7 +107,6 @@ describe('login', () => {
 
     it('throws on missing username', async () => {
         await assert.rejects(
-            // @ts-expect-error testing runtime validation
             login(undefined, 'admin'),
             /username.*password.*obrigat/i,
         )
@@ -115,7 +114,6 @@ describe('login', () => {
 
     it('throws on missing password', async () => {
         await assert.rejects(
-            // @ts-expect-error testing runtime validation
             login('admin', undefined),
             /username.*password.*obrigat/i,
         )
