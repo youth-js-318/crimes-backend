@@ -10,6 +10,8 @@ import getFitNowMembersRoutes from './src/routes/get_fit_now_members'
 import getFitNowCheckinRoutes from './src/routes/get_fit_now_checkin'
 import facebookEventCheckinRoutes from './src/routes/facebook_event_checkin'
 import solutionRoutes from './src/routes/solution'
+import authRoutes from './src/routes/auth'
+import { authMiddleware } from './src/lib/auth'
 import { openApiSpec } from './src/docs/openapi'
 import dotenv from 'dotenv'
 
@@ -44,6 +46,17 @@ app.use(
 // Também aceitam os parâmetros de filtro específicos de cada rota,
 // como person_id para entrevistas ou ssn para renda
 
+// Rotas de dados: requerem autenticacao via JWT
+app.use('/crimes', authMiddleware)
+app.use('/carteiras', authMiddleware)
+app.use('/pessoas', authMiddleware)
+app.use('/entrevistas', authMiddleware)
+app.use('/saldo', authMiddleware)
+app.use('/academia-membros', authMiddleware)
+app.use('/academia-checkin', authMiddleware)
+app.use('/facebook-checkin', authMiddleware)
+app.use('/solucao', authMiddleware)
+
 app.use('/crimes', crimesRoutes)
 app.use('/carteiras', carteirasRoutes)
 app.use('/pessoas', pessoasRoutes)
@@ -53,6 +66,9 @@ app.use('/academia-membros', getFitNowMembersRoutes)
 app.use('/academia-checkin', getFitNowCheckinRoutes)
 app.use('/facebook-checkin', facebookEventCheckinRoutes)
 app.use('/solucao', solutionRoutes)
+
+// Rotas publicas
+app.use('/login', authRoutes)
 
 app.listen(PORT, () => {
     console.log(`server running on http://localhost:${PORT}`)

@@ -42,6 +42,22 @@ const error = (description: string) => ({
     },
 })
 
+const unauthorized = () => ({
+    description: 'Token ausente, mal formatado ou expirado',
+    content: {
+        'application/json': {
+            schema: { $ref: '#/components/schemas/Unauthorized' },
+        },
+    },
+})
+
+const bearerSecurity = [{ BearerAuth: [] }]
+
+const wrapGuarded = <T extends Record<string, unknown>>(operation: T): T & { security: typeof bearerSecurity } => ({
+    ...operation,
+    security: bearerSecurity,
+})
+
 export const openApiSpec = {
     openapi: '3.0.3',
     info: {
@@ -66,8 +82,17 @@ export const openApiSpec = {
         { name: 'Academia' },
         { name: 'Facebook' },
         { name: 'Solucao' },
+        { name: 'Login' },
     ],
+    security: bearerSecurity,
     components: {
+        securitySchemes: {
+            BearerAuth: {
+                type: 'http',
+                scheme: 'bearer',
+                bearerFormat: 'JWT',
+            },
+        },
         parameters: {
             Page: {
                 name: 'page',
@@ -114,6 +139,33 @@ export const openApiSpec = {
                 required: ['error'],
                 properties: {
                     error: { type: 'string', description: 'Mensagem descrevendo o erro' },
+                },
+            },
+            Unauthorized: {
+                type: 'object',
+                description: 'Resposta de erro de autenticacao',
+                required: ['error'],
+                properties: {
+                    error: { type: 'string', description: 'Mensagem descrevendo o motivo da recusa' },
+                },
+            },
+            LoginRequest: {
+                type: 'object',
+                description: 'Credenciais submetidas para obter um token',
+                required: ['username', 'password'],
+                properties: {
+                    username: { type: 'string', description: 'Nome de usuario' },
+                    password: { type: 'string', description: 'Senha' },
+                },
+            },
+            LoginResponse: {
+                type: 'object',
+                description: 'Token JWT emitido pelo login',
+                required: ['token', 'token_type', 'expires_at'],
+                properties: {
+                    token: { type: 'string', description: 'JWT assinado' },
+                    token_type: { type: 'string', enum: ['Bearer'], description: 'Tipo do token' },
+                    expires_at: { type: 'string', format: 'date-time', description: 'Momento de expiracao do token em ISO-8601' },
                 },
             },
             CrimeSceneReport: {
@@ -226,8 +278,29 @@ export const openApiSpec = {
         },
     },
     paths: {
+        '/login': {
+            post: {
+                tags: ['Login'],
+                summary: 'Autentica e devolve um token JWT',
+                security: [],
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/LoginRequest' },
+                        },
+                    },
+                },
+                responses: {
+                    '200': okObject('Token emitido', '#/components/schemas/LoginResponse'),
+                    '400': error('Body invalido'),
+                    '401': unauthorized(),
+                    '500': error('Erro interno do servidor'),
+                },
+            },
+        },
         '/crimes': {
-            get: {
+            get: wrapGuarded({
                 tags: ['Crimes'],
                 summary: 'Lista crimes',
                 parameters: [
@@ -243,12 +316,13 @@ export const openApiSpec = {
                 responses: {
                     '200': okPaginated('Lista de crimes', '#/components/schemas/CrimeSceneReport'),
                     '400': error('Parametros de consulta invalidos'),
+                    '401': unauthorized(),
                     '500': error('Erro interno do servidor'),
                 },
-            },
+            }),
         },
         '/carteiras': {
-            get: {
+            get: wrapGuarded({
                 tags: ['Carteiras'],
                 summary: 'Lista carteiras de motorista',
                 parameters: [
@@ -269,12 +343,13 @@ export const openApiSpec = {
                 responses: {
                     '200': okPaginated('Lista de carteiras', '#/components/schemas/DriversLicense'),
                     '400': error('Parametros de consulta invalidos'),
+                    '401': unauthorized(),
                     '500': error('Erro interno do servidor'),
                 },
-            },
+            }),
         },
         '/pessoas': {
-            get: {
+            get: wrapGuarded({
                 tags: ['Pessoas'],
                 summary: 'Lista pessoas',
                 parameters: [
@@ -291,12 +366,13 @@ export const openApiSpec = {
                 responses: {
                     '200': okPaginated('Lista de pessoas', '#/components/schemas/Person'),
                     '400': error('Parametros de consulta invalidos'),
+                    '401': unauthorized(),
                     '500': error('Erro interno do servidor'),
                 },
-            },
+            }),
         },
         '/entrevistas': {
-            get: {
+            get: wrapGuarded({
                 tags: ['Entrevistas'],
                 summary: 'Lista entrevistas',
                 parameters: [
@@ -310,12 +386,13 @@ export const openApiSpec = {
                 responses: {
                     '200': okPaginated('Lista de entrevistas', '#/components/schemas/Interview'),
                     '400': error('Parametros de consulta invalidos'),
+                    '401': unauthorized(),
                     '500': error('Erro interno do servidor'),
                 },
-            },
+            }),
         },
         '/saldo': {
-            get: {
+            get: wrapGuarded({
                 tags: ['Renda'],
                 summary: 'Lista renda',
                 parameters: [
@@ -329,12 +406,13 @@ export const openApiSpec = {
                 responses: {
                     '200': okPaginated('Lista de renda', '#/components/schemas/Income'),
                     '400': error('Parametros de consulta invalidos'),
+                    '401': unauthorized(),
                     '500': error('Erro interno do servidor'),
                 },
-            },
+            }),
         },
         '/academia-membros': {
-            get: {
+            get: wrapGuarded({
                 tags: ['Academia'],
                 summary: 'Lista membros da academia',
                 parameters: [
@@ -351,12 +429,13 @@ export const openApiSpec = {
                 responses: {
                     '200': okPaginated('Lista de membros', '#/components/schemas/GetFitNowMember'),
                     '400': error('Parametros de consulta invalidos'),
+                    '401': unauthorized(),
                     '500': error('Erro interno do servidor'),
                 },
-            },
+            }),
         },
         '/academia-checkin': {
-            get: {
+            get: wrapGuarded({
                 tags: ['Academia'],
                 summary: 'Lista check-ins da academia',
                 parameters: [
@@ -372,12 +451,13 @@ export const openApiSpec = {
                 responses: {
                     '200': okPaginated('Lista de check-ins', '#/components/schemas/GetFitNowCheckIn'),
                     '400': error('Parametros de consulta invalidos'),
+                    '401': unauthorized(),
                     '500': error('Erro interno do servidor'),
                 },
-            },
+            }),
         },
         '/facebook-checkin': {
-            get: {
+            get: wrapGuarded({
                 tags: ['Facebook'],
                 summary: 'Lista check-ins de eventos do Facebook',
                 parameters: [
@@ -393,12 +473,13 @@ export const openApiSpec = {
                 responses: {
                     '200': okPaginated('Lista de check-ins do Facebook', '#/components/schemas/FacebookEventCheckin'),
                     '400': error('Parametros de consulta invalidos'),
+                    '401': unauthorized(),
                     '500': error('Erro interno do servidor'),
                 },
-            },
+            }),
         },
         '/solucao': {
-            post: {
+            post: wrapGuarded({
                 tags: ['Solucao'],
                 summary: 'Valida uma solucao para o crime',
                 requestBody: {
@@ -418,9 +499,10 @@ export const openApiSpec = {
                 responses: {
                     '200': okObject('Resultado da validacao', '#/components/schemas/Validation'),
                     '400': error('Body invalido'),
+                    '401': unauthorized(),
                     '500': error('Erro interno do servidor'),
                 },
-            },
+            }),
         },
     },
 }

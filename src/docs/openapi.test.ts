@@ -14,6 +14,9 @@ const REQUIRED_SCHEMAS = [
     'FacebookEventCheckin',
     'Error',
     'Validation',
+    'LoginRequest',
+    'LoginResponse',
+    'Unauthorized',
 ] as const
 
 type PathKey =
@@ -26,9 +29,10 @@ type PathKey =
     | '/academia-checkin'
     | '/facebook-checkin'
     | '/solucao'
+    | '/login'
 
-type ArrayPathKey = Exclude<PathKey, '/solucao'>
-type ObjectPathKey = '/solucao'
+type ArrayPathKey = Exclude<PathKey, '/solucao' | '/login'>
+type ObjectPathKey = '/solucao' | '/login'
 
 const ARRAY_ENDPOINTS: Record<ArrayPathKey, string> = {
     '/crimes': 'CrimeSceneReport',
@@ -43,7 +47,20 @@ const ARRAY_ENDPOINTS: Record<ArrayPathKey, string> = {
 
 const OBJECT_ENDPOINTS: Record<ObjectPathKey, string> = {
     '/solucao': 'Validation',
+    '/login': 'LoginResponse',
 }
+
+const GUARDED_PATH_KEYS: PathKey[] = [
+    '/crimes',
+    '/carteiras',
+    '/pessoas',
+    '/entrevistas',
+    '/saldo',
+    '/academia-membros',
+    '/academia-checkin',
+    '/facebook-checkin',
+    '/solucao',
+]
 
 const ALL_ENDPOINTS: Record<PathKey, string> = {
     ...ARRAY_ENDPOINTS,
@@ -53,15 +70,18 @@ const ALL_ENDPOINTS: Record<PathKey, string> = {
 type Components = {
     parameters?: Record<string, unknown>
     schemas?: Record<string, { type?: string; properties?: Record<string, unknown>; required?: string[] }>
+    securitySchemes?: Record<string, { type?: string; scheme?: string; bearerFormat?: string }>
 }
 
 type Operation = {
+    security?: Array<Record<string, string[]>>
     requestBody?: { required?: boolean; content?: { 'application/json'?: { schema?: unknown } } }
     responses?: Record<string, { description?: string; content?: { 'application/json'?: { schema?: unknown } } }>
 }
 
 type OpenApiSpec = {
     openapi: string
+    security?: Array<Record<string, string[]>>
     paths: Record<string, { get?: Operation; post?: Operation }>
     components?: Components
 }
@@ -84,6 +104,45 @@ describe('openapi spec', () => {
                 `Schema ${name} precisa ter properties`,
             )
         }
+    })
+
+    it('declares a BearerAuth security scheme', () => {
+        const scheme = spec.components?.securitySchemes?.BearerAuth as
+            | { type?: string; scheme?: string; bearerFormat?: string }
+            | undefined
+        assert.ok(scheme, 'securitySchemes.BearerAuth ausente')
+        assert.equal(scheme.type, 'http')
+        assert.equal(scheme.scheme, 'bearer')
+        assert.equal(scheme.bearerFormat, 'JWT')
+    })
+
+    it('declares a top-level security requirement referencing BearerAuth', () => {
+        const security = spec.security
+        assert.ok(security, 'spec.security ausente')
+        assert.ok(
+            security!.some((entry) => 'BearerAuth' in entry),
+            'spec.security deve referenciar BearerAuth',
+        )
+    })
+
+    it('applies security to every guarded data path', () => {
+        for (const path of GUARDED_PATH_KEYS) {
+            const operation = spec.paths[path]?.get ?? spec.paths[path]?.post
+            assert.ok(operation, `Operacao ausente em ${path}`)
+            const operationSecurity = operation.security
+            assert.ok(
+                operationSecurity?.some((entry) => 'BearerAuth' in entry),
+                `${path} deve exigir BearerAuth`,
+            )
+        }
+    })
+
+    it('opts /login out of the top-level security requirement', () => {
+        const operation = spec.paths['/login']?.post
+        assert.ok(operation, 'Operacao POST ausente em /login')
+        const operationSecurity = operation.security
+        assert.ok(operationSecurity, '/login deve declarar security: [] explicito')
+        assert.equal(operationSecurity!.length, 0, '/login security deve ser array vazio')
     })
 
     it('declares a 200 paginated envelope with the correct schema for array endpoints', () => {
@@ -178,6 +237,40 @@ describe('openapi spec', () => {
             'Body de POST /solucao deve exigir o campo "name"',
         )
         assert.ok(bodySchema.properties?.name, 'Body de POST /solucao deve declarar a propriedade "name"')
+    })
+
+    it('declares POST /login with a required requestBody referencing LoginRequest and 200 referencing LoginResponse', () => {
+        const operation = spec.paths['/login']?.post
+        assert.ok(operation, 'Operacao POST ausente em /login')
+
+        const requestBody = operation.requestBody
+        assert.ok(requestBody, 'requestBody ausente em POST /login')
+        assert.equal(requestBody.required, true, 'requestBody de POST /login deve ser obrigatorio')
+
+        const bodySchema = requestBody.content?.['application/json']?.schema as { $ref?: string } | undefined
+        assert.equal(
+            bodySchema?.$ref,
+            '#/components/schemas/LoginRequest',
+            'Body de POST /login deve referenciar LoginRequest',
+        )
+
+        const response200 = operation.responses?.['200']
+        const response401 = operation.responses?.['401']
+        assert.ok(response200, 'Resposta 200 ausente em /login')
+        assert.ok(response401, 'Resposta 401 ausente em /login')
+
+        const schema200 = response200.content?.['application/json']?.schema as { $ref?: string } | undefined
+        const schema401 = response401.content?.['application/json']?.schema as { $ref?: string } | undefined
+        assert.equal(
+            schema200?.$ref,
+            '#/components/schemas/LoginResponse',
+            '200 de /login deve referenciar LoginResponse',
+        )
+        assert.equal(
+            schema401?.$ref,
+            '#/components/schemas/Unauthorized',
+            '401 de /login deve referenciar Unauthorized',
+        )
     })
 
     it('every $ref in the spec resolves to a defined component', () => {
