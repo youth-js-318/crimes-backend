@@ -60,7 +60,7 @@ The password is stored as a plain string because the goal is a mock that student
 
 - Library: `jose` (added to `package.json` `dependencies`).
 - Algorithm: `HS256`.
-- Secret source: `process.env.JWT_SECRET ?? 'dev-secret-change-me'`. The secret is encoded to a `Uint8Array` once at module load time and reused for both signing and verification.
+- Secret source: `process.env.JWT_SECRET ?? 'dev-secret-change-me'`. The secret is re-read on each call so tests can swap it without reloading the module. Encoding is a cheap `new TextEncoder().encode(...)`.
 - Lifetime: 1 hour. The token's `exp` is `iat + 3600`. The response includes an `expires_at` field as an ISO-8601 string.
 - Claims:
   ```ts
