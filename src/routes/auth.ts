@@ -15,7 +15,7 @@ authRoutes.post('/', async (req, res) => {
         if (/credenciais/i.test(message)) {
             return res.status(401).json({ error: message })
         }
-        if (/username e password/i.test(message)) {
+        if (/username.*password.*obrigat/i.test(message)) {
             return res.status(400).json({ error: message })
         }
         return res.status(500).json({ error: 'Erro interno do servidor' })
